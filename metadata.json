@@ -1,0 +1,8 @@
+{
+  "name": "Gemini Deep Insight",
+  "description": "An advanced AI search and reasoning platform powered by Gemini 3 Pro. Features real-time Google Search grounding and deep reasoning capabilities for complex problem solving.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ]
+}
