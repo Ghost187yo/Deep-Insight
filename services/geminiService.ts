@@ -1,7 +1,7 @@
 
 import { GoogleGenAI, GenerateContentResponse, Part, Type } from "@google/genai";
 import { MODEL_PRO, MODEL_FLASH, THINKING_BUDGET, SYSTEM_INSTRUCTION } from "../constants";
-import { Source, IntelligenceMode, ActionItem } from "../types";
+import { Source, IntelligenceMode, ActionItem, RecapData } from "../types";
 
 export class GeminiService {
   async *streamQuery(
@@ -84,7 +84,7 @@ export class GeminiService {
     }
   }
 
-  async getActionItems(history: { role: 'user' | 'model', parts: Part[] }[]): Promise<ActionItem[]> {
+  async getRecap(history: { role: 'user' | 'model', parts: Part[] }[]): Promise<RecapData> {
     const ai = new GoogleGenAI({ apiKey: process.env.API_KEY || '' });
     
     try {
@@ -94,32 +94,39 @@ export class GeminiService {
           ...history,
           { 
             role: 'user', 
-            parts: [{ text: "Based on our conversation above, extract all actionable tasks, key decisions, or upcoming items. Be specific." }] 
+            parts: [{ text: "Synthesize our conversation. Provide a high-level narrative summary (2-3 sentences) and a list of specific actionable tasks or key takeaways." }] 
           }
         ],
         config: {
-          systemInstruction: "You are a professional project coordinator. Extract actionable tasks from the conversation and categorize them by priority.",
+          systemInstruction: "You are a professional strategist. Analyze the chat history and extract both a narrative executive summary and structured tasks categorized by priority.",
           responseMimeType: "application/json",
           responseSchema: {
-            type: Type.ARRAY,
-            items: {
-              type: Type.OBJECT,
-              properties: {
-                task: { type: Type.STRING, description: "The specific actionable item." },
-                priority: { type: Type.STRING, enum: ["low", "medium", "high"], description: "The importance of the task." },
-                context: { type: Type.STRING, description: "Brief context or reason for this task." }
-              },
-              required: ["task", "priority"]
-            }
+            type: Type.OBJECT,
+            properties: {
+              summary: { type: Type.STRING, description: "A concise executive summary of the chat history." },
+              tasks: {
+                type: Type.ARRAY,
+                items: {
+                  type: Type.OBJECT,
+                  properties: {
+                    task: { type: Type.STRING, description: "The specific actionable item." },
+                    priority: { type: Type.STRING, enum: ["low", "medium", "high"], description: "The importance of the task." },
+                    context: { type: Type.STRING, description: "Brief context or reason for this task." }
+                  },
+                  required: ["task", "priority"]
+                }
+              }
+            },
+            required: ["summary", "tasks"]
           }
         }
       });
 
-      const text = response.text || "[]";
+      const text = response.text || '{"summary": "No summary available.", "tasks": []}';
       return JSON.parse(text);
     } catch (error) {
-      console.error("Action extraction error:", error);
-      return [];
+      console.error("Recap extraction error:", error);
+      return { summary: "Error generating recap.", tasks: [] };
     }
   }
 }

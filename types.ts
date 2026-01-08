@@ -22,4 +22,17 @@ export interface ActionItem {
   context?: string;
 }
 
+export interface RecapData {
+  summary: string;
+  tasks: ActionItem[];
+}
+
+export interface ChatSession {
+  id: string;
+  title: string;
+  messages: Message[];
+  timestamp: Date;
+  lastUpdated: Date;
+}
+
 export type IntelligenceMode = 'reasoning' | 'instant';
